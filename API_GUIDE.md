@@ -1,30 +1,35 @@
-# Social Media API - GraphQL Guide
+# Social Media Platform - GraphQL API Documentation
 
-This guide provides a comprehensive list of all available Queries and Mutations for the Social Media Platform API.
-
-## 🚀 Getting Started
-
-1. Start the server: `python main.py`
-2. Open the GraphQL Playground: `http://localhost:8000/`
+## 🎯 Goal
+Create a GraphQL API for a social media platform where users can create profiles, post content, follow others, and interact with posts.
 
 ---
 
-## 🔍 Queries (Data Retrieval)
+## 🏗 Database Models
+The system uses the following core models (implemented in `db.py`):
 
-### 1. Get User Profile
-Fetches a user's basic info, their posts, and follow counts.
+- **User**: `id`, `username`, `email`, `bio`, `avatarUrl`, `joinDate`
+- **Post**: `id`, `userId`, `content`, `imageUrl`, `createdAt`, `likesCount`
+- **Comment**: `id`, `postId`, `userId`, `content`, `createdAt`
+- **Follow**: `followerId`, `followingId`, `createdAt` (junction table)
+- **Like**: `userId`, `postId`, `createdAt` (junction table)
+- **Message**: `id`, `senderId`, `receiverId`, `content`, `sentAt`, `readAt`
+
+---
+
+## 🔍 Test Queries
+
+### 1. Get User Profile with Posts
 ```graphql
 query {
   user(username: "alex_explorer") {
     id
     username
     bio
-    avatarUrl
-    joinDate
     posts {
       content
       likesCount
-      commentsCount
+      comments { content }
     }
     followersCount
     followingCount
@@ -32,62 +37,40 @@ query {
 }
 ```
 
-### 2. Get User Feed
-Shows posts from people that a specific user follows.
+### 2. Get Feed for User
 ```graphql
 query {
   feed(userId: "4") {
     id
     content
-    imageUrl
-    createdAt
+    user { username, avatarUrl }
     likesCount
-    commentsCount
-    user {
-      username
-    }
+    comments { content }
   }
 }
 ```
 
 ### 3. Get Followers List
-Lists everyone following a specific user and the follow date.
 ```graphql
 query {
   followers(userId: "1") {
-    user {
-      username
-      avatarUrl
-    }
+    user { username }
     createdAt
-  }
-}
-```
-
-### 4. List All Users
-A quick overview of all registered users in the system.
-```graphql
-query {
-  users {
-    id
-    username
-    email
   }
 }
 ```
 
 ---
 
-## ⚡ Mutations (Actions)
+## ⚡ Test Mutations
 
-### 1. Create a New Post
-Add new content to a user's profile.
+### 1. Create a Post
 ```graphql
 mutation {
   createPost(input: {
-    userId: "2",
-    content: "Building with FastAPI and Graphene is so efficient! 🐍🚀",
-    imageUrl: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97"
+    userId: "1"
+    content: "Hello World!"
+    imageUrl: "https://example.com/image.jpg"
   }) {
     post {
       id
@@ -99,78 +82,16 @@ mutation {
 ```
 
 ### 2. Like a Post
-Increments the `likesCount` for a specific post.
 ```graphql
 mutation {
   likePost(input: {
-    userId: "3",
-    postId: "2"
+    userId: "1"
+    postId: "1"
   }) {
     likesCount
     post {
       id
-      content
-    }
-  }
-}
-```
-
-### 3. Add a Comment
-Post feedback on an existing post.
-```graphql
-mutation {
-  createComment(input: {
-    userId: "4",
-    postId: "3",
-    content: "This bread looks incredible! Can't wait to try the recipe."
-  }) {
-    comment {
-      id
-      content
-      createdAt
-      user {
-        username
-      }
-    }
-  }
-}
-```
-
-### 4. Follow a User
-Establish a new follow connection between two users.
-```graphql
-mutation {
-  followUser(input: {
-    followerId: "3",
-    followingId: "4"
-  }) {
-    follower {
-      username
-      followingCount
-    }
-    following {
-      username
-      followersCount
-    }
-  }
-}
-```
-
-### 5. Send a Private Message
-Simulate a direct message between two users.
-```graphql
-mutation {
-  sendMessage(input: {
-    senderId: "1",
-    receiverId: "4",
-    content: "Hey Luna! Welcome to the adventure club! 🧗‍♂️"
-  }) {
-    message {
-      id
-      content
-      sentAt
-      sender { username }
-      receiver { username }
+      likesCount
     }
   }
 }
@@ -178,9 +99,26 @@ mutation {
 
 ---
 
-## 🛠 Tech Stack Details
+## ✅ Expected Test Cases
+1. User profile shows posts and followers
+2. Feed shows posts from followed users
+3. Like increments count correctly
+4. Follow creates bidirectional relationship
+5. Comments added to posts correctly
+6. Messages sent and received
+7. Post shows correct like/comment counts
 
-- **Backend**: FastAPI (Python)
-- **GraphQL**: Graphene
-- **Mock Data**: Pre-populated in `db.py`
-- **Logic**: Implemented in `resolvers.py`
+---
+
+## 💡 Hints & Implementation Notes
+- **Followers**: Implemented as a many-to-many relationship using a junction data structure.
+- **Likes**: Tracked on posts to provide real-time `likesCount`.
+- **Communication**: Full message system for direct user interaction.
+- **Aggregations**: Dynamic calculation of like and comment counts.
+
+---
+
+## 🚀 How to Test
+1. Run the server: `python main.py`
+2. Open the browser to: `http://localhost:8000/`
+3. Copy and paste the queries above into the GraphiQL editor.
